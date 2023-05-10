@@ -1,0 +1,84 @@
+services:
+  mlflow_server:
+    restart: always
+    image: mlflow:arm64
+    container_name: mlflow_server
+    ports:
+      - 5000:5000
+    expose:
+        - "5000"
+    networks:
+        - public
+    depends_on:
+      - postgres
+    command: mlflow server --host 0.0.0.0 --backend-store-uri postgresql://postgres:password@postgres:5432 --artifacts-destination /home/mlflow/mlartifacts #--default-artifact-root s3://mlflow_bucket/mlflow/       
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    hostname: postgres
+    expose:
+      - "5432"
+    networks:
+      - public
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  setup-container:
+    image: mlops-demo/setup-container:1
+    build: ./setup-container
+    container_name: setup-container
+    networks:
+      - public
+    environment:
+      - PGPASSWORD=password
+      - PGUSER=postgres
+      - PGHOST=postgres
+      - PGPORT=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  hub:
+    build: ./jupyterhub
+    restart: always
+    image: jupyterhub:3.1
+    container_name: jupyterhub
+    networks:
+      - public
+    volumes:
+      # The JupyterHub configuration file
+      - "./jupyterhub/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro"
+      # Bind Docker socket on the host so we can connect to the daemon from
+      # within the container
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+      # Bind Docker volume on host for JupyterHub database and cookie secrets
+      - "jupyterhub-data:/data"
+    ports:
+      - "8100:8100"
+    expose:
+      - "8100"
+    environment:
+      # This username will be a JupyterHub admin
+      JUPYTERHUB_ADMIN: admin
+      # The network of uour stack
+      DOCKER_NETWORK_NAME: stack_public
+      # JupyterHub will spawn this Notebook image for users
+      DOCKER_NOTEBOOK_IMAGE: jupyter/base-notebook:latest
+      # Notebook directory inside user image
+      DOCKER_NOTEBOOK_DIR: /home/jovyan/work
+      # Using this run command
+      DOCKER_SPAWN_CMD: start-singleuser.sh
+      # The MLFlow Tracking Server
+      MLFLOW_URI: http://mlflow_server:5000
+
+networks:
+    public:
+        driver: bridge
+
+volumes:
+  jupyterhub-data:
