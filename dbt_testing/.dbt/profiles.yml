@@ -1,0 +1,17 @@
+# This file is used for self-managed DBT, it should be mapped to a .env file for credentials
+
+dbt_testing:
+
+  target: dev
+
+  outputs:
+  
+    dev:
+      type: postgres
+      threads: 1
+      host: localhost
+      port: 5433
+      user: postgres
+      pass: root
+      dbname: films
+      schema: public

@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: postgres # this is the source_name
+    database: films
+    schema: public
+
+    tables:
+      - name: basics # this is the table_name
+      - name: ratings
+      - name: titles
