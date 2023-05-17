@@ -2,6 +2,7 @@ services:
   mlflow_server:
     restart: always
     image: mlflow:arm64
+    build: ./mlflow
     container_name: mlflow_server
     ports:
       - 5000:5000
@@ -35,50 +36,42 @@ services:
     networks:
       - public
     environment:
-      - PGPASSWORD=password
-      - PGUSER=postgres
-      - PGHOST=postgres
-      - PGPORT=5432
+      PGPASSWORD: "password"
+      PGUSER: "postgres"
+      PGHOST: "postgres"
+      PGPORT: "5432"
+      CODER_ACCESS_URL: "http://coder:7080"
+      CODER_FIRST_USER_USERNAME: "admin"
+      CODER_FIRST_USER_EMAIL: "admin@bomzai.fr"
+      CODER_FIRST_USER_PASSWORD: "*ChangeMe2023"
+      CODER_FIRST_USER_TRIAL: "false"
+    volumes:
+      - "./setup-container:/setup-container:rwx"
     depends_on:
       postgres:
         condition: service_healthy
-
-  hub:
-    build: ./jupyterhub
+  coder:
     restart: always
-    image: jupyterhub:3.1
-    container_name: jupyterhub
+    image: ghcr.io/coder/coder:v0.23.4
+    container_name: coder
+    ports:
+      - 7080:7080
+    expose:
+        - "7080"
     networks:
       - public
     volumes:
-      # The JupyterHub configuration file
-      - "./jupyterhub/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py:ro"
-      # Bind Docker socket on the host so we can connect to the daemon from
-      # within the container
       - "/var/run/docker.sock:/var/run/docker.sock:rw"
-      # Bind Docker volume on host for JupyterHub database and cookie secrets
-      - "jupyterhub-data:/data"
-    ports:
-      - "8100:8100"
-    expose:
-      - "8100"
+      - "./coder/template:/coder/template:rw"
     environment:
-      # This username will be a JupyterHub admin
-      JUPYTERHUB_ADMIN: admin
-      # The network of uour stack
-      DOCKER_NETWORK_NAME: stack_public
-      # JupyterHub will spawn this Notebook image for users
-      DOCKER_NOTEBOOK_IMAGE: jupyter/base-notebook:latest
-      # Notebook directory inside user image
-      DOCKER_NOTEBOOK_DIR: /home/jovyan/work
-      # Using this run command
-      DOCKER_SPAWN_CMD: start-singleuser.sh
-      # The MLFlow Tracking Server
-      MLFLOW_URI: http://mlflow_server:5000
+      CODER_PG_CONNECTION_URL: "postgresql://postgres:password@postgres:5432?sslmode=disable"
+      CODER_HTTP_ADDRESS: "0.0.0.0:7080"
+      CODER_ACCESS_URL: "http://localhost:7080"
+      CODER_BROWSER_ONLY: "true"
+    group_add:
+      - "1002"
 
 networks:
     public:
         driver: bridge
 
-volumes:
-  jupyterhub-data:

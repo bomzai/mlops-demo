@@ -1,6 +1,13 @@
-FROM postgres:15
+FROM ubuntu:22.04
 
-COPY setup.sh /setup.sh
-RUN chmod +x /setup.sh
+# Prerequisites
+RUN apt-get update \
+	&& apt-get install -y \
+	curl \
+	postgresql-client \
+	&& rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://coder.com/install.sh | sh
 
-CMD [ "/setup.sh" ]
+WORKDIR /setup-container
+
+CMD [ "./setup.sh" ]
