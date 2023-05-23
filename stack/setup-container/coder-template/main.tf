@@ -24,6 +24,10 @@ provider "docker" {
 data "coder_workspace" "me" {
 }
 
+resource "docker_network" "stack" {
+  name = "stack_public"
+}
+
 resource "coder_agent" "main" {
   arch                   = data.coder_provisioner.me.arch
   os                     = "linux"
@@ -37,7 +41,7 @@ resource "coder_agent" "main" {
     # Jupyter
     pip install jupyterlab==3.6.3 jupyterlab-git==0.41.0
     # Additional packages
-    pip install --user mlflow==2.3.1
+    pip install --user mlflow==2.3.1 prefect==2.7.10
 
     # Set path for local packages
     grep -s -q 'export PATH=.*/\.local/bin' .proile || (echo "export PATH=$PATH:$HOME/.local/bin" >> $HOME/.profile)
@@ -61,6 +65,7 @@ resource "coder_agent" "main" {
   # These env variables will be set when using VSCode or Jupyterlab
   env = {
     MLFLOW_TRACKING_URI = "${data.coder_parameter.mlflow_uri.value}"
+    PREFECT_API_URL = "${data.coder_parameter.prefect_uri.value}"
   }
 }
 
@@ -172,6 +177,11 @@ resource "docker_container" "workspace" {
     label = "coder.workspace_name"
     value = data.coder_workspace.me.name
   }
+  # Add docker stack network
+  networks_advanced = [
+    { name = "bridge" },
+    { name = "${docker_network.stack.id}" }
+  ]
 }
 
 data "coder_parameter" "mlflow_uri" {
@@ -179,4 +189,11 @@ data "coder_parameter" "mlflow_uri" {
   description = "The URI of MLFlow"
   mutable     = true
   default     = "http://mlflow:5000"
+}
+
+data "coder_parameter" "prefect_uri" {
+  name        = "Prefect API URI"
+  description = "The URI of Prefect API"
+  mutable     = true
+  default     = "http://prefect:4200/api"
 }

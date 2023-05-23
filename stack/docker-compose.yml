@@ -12,7 +12,7 @@ services:
         - public
     depends_on:
       - postgres
-    command: mlflow server --host 0.0.0.0 --backend-store-uri postgresql://postgres:password@postgres:5432 --artifacts-destination /home/mlflow/mlartifacts #--default-artifact-root s3://mlflow_bucket/mlflow/       
+    command: mlflow server --host 0.0.0.0 --backend-store-uri postgresql://mlflow:mlflow123@postgres:5432/mlflow --artifacts-destination /home/mlflow/mlartifacts #--default-artifact-root s3://mlflow_bucket/mlflow/       
   postgres:
     image: postgres:15
     container_name: postgres
@@ -68,6 +68,32 @@ services:
       CODER_HTTP_ADDRESS: "0.0.0.0:7080"
       CODER_ACCESS_URL: "http://localhost:7080"
       CODER_BROWSER_ONLY: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    group_add:
+      - "1002"
+  prefect:
+    restart: always
+    image: prefecthq/prefect:2.7.10-python3.10
+    container_name: prefect
+    command: "prefect orion start"
+    ports:
+      - 4200:4200
+    expose:
+        - "4200"
+    networks:
+      - public
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+    environment:
+      PREFECT_API_URL: "http://localhost:4200/api"
+      PREFECT_ORION_API_PORT: "4200"
+      PREFECT_ORION_DATABASE_CONNECTION_URL: "postgresql+asyncpg://prefect:prefect123@postgres:5432/prefect"
+      PREFECT_ORION_API_HOST: "0.0.0.0"
+    depends_on:
+      postgres:
+        condition: service_healthy
     group_add:
       - "1002"
 
