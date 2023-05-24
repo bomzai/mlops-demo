@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: postgres # this is the source_name
+    database: athlete
+    schema: athlete
+
+    tables:
+      - name: customers
