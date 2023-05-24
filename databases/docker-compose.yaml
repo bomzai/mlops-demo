@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    container_name: postgres
+    image: postgres:15.3
+    ports:
+      - 5432:5432
+    volumes:
+      - ./postgres_data/:/data
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: postgres
+      POSTGRES_DB: athlete
+
+  mysql:
+    image: mysql:8.0.33-debian
+    container_name: mysql
+    ports:
+      - 3306:3306
+    volumes:
+      - ./data/data.sql:/docker-entrypoint-initdb.d/data.sql
+    environment:
+      MYSQL_DATABASE: athlete
+      MYSQL_ROOT_PASSWORD: root
