@@ -1,0 +1,38 @@
+services:
+  mlflow_server:
+    restart: always
+    image: "${MLFLOW_IMAGE}"
+    container_name: mlflow_server
+    ports:
+      - "${MLFLOW_PORT}:${MLFLOW_PORT}"
+    expose:
+        - "${MLFLOW_PORT}"
+    networks:
+        - network1
+    command: "mlflow server --host 0.0.0.0 --backend-store-uri postgresql://${MLFLOW_POSTGRES_USER}:${MLFLOW_POSTGRES_PASSWORD}@${MLFLOW_POSTGRES_HOST}:${MLFLOW_POSTGRES_PORT}/${MLFLOW_POSTGRES_DB} --artifacts-destination ${MLFLOW_ARTIFACT_STORAGE}"
+    volumes:
+      - "mlflow_artifacts:${MLFLOW_ARTIFACT_STORAGE}"
+  init-container:
+    image: mlops-demo/init-container:1.0
+    container_name: mlflow-init
+    command: "/scripts/init.sh"
+    networks:
+      - network1
+    environment:
+      PGHOST: "${MLFLOW_POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      MLFLOW_DB: "${MLFLOW_POSTGRES_DB}"
+      MLFLOW_USER: "${MLFLOW_POSTGRES_USER}"
+      MLFLOW_PASSWORD: "${MLFLOW_POSTGRES_PASSWORD}"
+    volumes:
+      - "./scripts:/scripts:rwx"
+
+networks:
+  network1:
+    name: "${NETWORK_NAME}"
+    external: true
+
+volumes:
+  mlflow_artifacts:

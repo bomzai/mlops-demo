@@ -24,10 +24,6 @@ provider "docker" {
 data "coder_workspace" "me" {
 }
 
-resource "docker_network" "stack" {
-  name = "stack_public"
-}
-
 resource "coder_agent" "main" {
   arch                   = data.coder_provisioner.me.arch
   os                     = "linux"
@@ -150,7 +146,7 @@ resource "docker_container" "workspace" {
   hostname = data.coder_workspace.me.name
   # Use the docker gateway if the access URL is 127.0.0.1
   entrypoint = ["sh", "-c", replace(coder_agent.main.init_script, "/localhost|127\\.0\\.0\\.1/", "host.docker.internal")]
-  env        = ["CODER_AGENT_TOKEN=${coder_agent.main.token}"]
+  env        = ["CODER_AGENT_TOKEN=${coder_agent.main.token}"] 
   host {
     host = "host.docker.internal"
     ip   = "host-gateway"
@@ -159,6 +155,12 @@ resource "docker_container" "workspace" {
     container_path = "/home/${local.username}"
     volume_name    = docker_volume.home_volume.name
     read_only      = false
+  }
+  networks_advanced { 
+    name = "bridge" 
+  }
+  networks_advanced { 
+    name = "${data.coder_parameter.docker_network.value}" 
   }
   # Add labels in Docker to keep track of orphan resources.
   labels {
@@ -177,11 +179,6 @@ resource "docker_container" "workspace" {
     label = "coder.workspace_name"
     value = data.coder_workspace.me.name
   }
-  # Add docker stack network
-  networks_advanced = [
-    { name = "bridge" },
-    { name = "${docker_network.stack.id}" }
-  ]
 }
 
 data "coder_parameter" "mlflow_uri" {
@@ -196,4 +193,11 @@ data "coder_parameter" "prefect_uri" {
   description = "The URI of Prefect API"
   mutable     = true
   default     = "http://prefect:4200/api"
+}
+
+data "coder_parameter" "docker_network" {
+  name        = "Docker Network"
+  description = "Namer of the stack docker network"
+  mutable     = true
+  default     = "stack"
 }

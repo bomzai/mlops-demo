@@ -9,5 +9,3 @@ RUN apt-get update \
 RUN curl -fsSL https://coder.com/install.sh | sh
 
 WORKDIR /setup-container
-
-CMD [ "./setup.sh" ]
