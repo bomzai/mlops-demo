@@ -10,8 +10,8 @@ dbt_testing:
       type: postgres
       threads: 1
       host: localhost
-      port: 5433
+      port: 5432
       user: postgres
       pass: root
-      dbname: films
-      schema: public
+      dbname: athlete
+      schema: athlete
