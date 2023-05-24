@@ -1,0 +1,56 @@
+# Configuration for airbyte/source-mysql
+# Documentation about this connector can be found at https://docs.airbyte.com/integrations/sources/mysql
+resource_name: "mysql_athlete"
+definition_type: source
+definition_id: 435bb9a5-7887-4809-aa58-28c27df0d7ad
+definition_image: airbyte/source-mysql
+definition_version: 2.0.21
+
+# EDIT THE CONFIGURATION BELOW!
+configuration:
+  ssl: true # OPTIONAL | boolean | Encrypt data using SSL.
+  host: "localhost" # REQUIRED | string | The host name of the database.
+  port: 3306 # REQUIRED | integer | The port to connect to. | Example: 3306
+  database: athlete # REQUIRED | string | The database name.
+  password: root # SECRET (please store in environment variables) | OPTIONAL | string | The password associated with the username.
+  ssl_mode:
+    ## -------- Pick one valid structure among the examples below: --------
+    mode: "preferred" # REQUIRED | string
+    ## -------- Another valid structure for ssl_mode: --------
+    # mode: "required" # REQUIRED | string
+    ## -------- Another valid structure for ssl_mode: --------
+    # mode: "verify_ca" # REQUIRED | string
+    # client_key: ${CLIENT_KEY} # SECRET (please store in environment variables) | OPTIONAL | string | Client key (this is not a required field, but if you want to use it, you will need to add the <b>Client certificate</b> as well)
+    # ca_certificate: ${CA_CERTIFICATE} # SECRET (please store in environment variables) | REQUIRED | string | CA certificate
+    # client_certificate: ${CLIENT_CERTIFICATE} # SECRET (please store in environment variables) | OPTIONAL | string | Client certificate (this is not a required field, but if you want to use it, you will need to add the <b>Client key</b> as well)
+    # client_key_password: ${CLIENT_KEY_PASSWORD} # SECRET (please store in environment variables) | OPTIONAL | string | Password for keystorage. This field is optional. If you do not add it - the password will be generated automatically.
+    ## -------- Another valid structure for ssl_mode: --------
+    # mode: "verify_identity" # REQUIRED | string
+    # client_key: ${CLIENT_KEY} # SECRET (please store in environment variables) | OPTIONAL | string | Client key (this is not a required field, but if you want to use it, you will need to add the <b>Client certificate</b> as well)
+    # ca_certificate: ${CA_CERTIFICATE} # SECRET (please store in environment variables) | REQUIRED | string | CA certificate
+    # client_certificate: ${CLIENT_CERTIFICATE} # SECRET (please store in environment variables) | OPTIONAL | string | Client certificate (this is not a required field, but if you want to use it, you will need to add the <b>Client key</b> as well)
+    # client_key_password: ${CLIENT_KEY_PASSWORD} # SECRET (please store in environment variables) | OPTIONAL | string | Password for keystorage. This field is optional. If you do not add it - the password will be generated automatically.
+  username: "root" # REQUIRED | string | The username which is used to access the database.
+  tunnel_method:
+    ## -------- Pick one valid structure among the examples below: --------
+    tunnel_method: "NO_TUNNEL" # REQUIRED | string | No ssh tunnel needed to connect to database
+    ## -------- Another valid structure for tunnel_method: --------
+    # ssh_key: ${SSH_KEY} # SECRET (please store in environment variables) | REQUIRED | string | OS-level user account ssh key credentials in RSA PEM format ( created with ssh-keygen -t rsa -m PEM -f myuser_rsa )
+    # tunnel_host: # REQUIRED | string | Hostname of the jump server host that allows inbound ssh tunnel.
+    # tunnel_port: 22 # REQUIRED | integer | Port on the proxy/jump server that accepts inbound ssh connections. | Example: 22
+    # tunnel_user: # REQUIRED | string | OS-level username for logging into the jump server host.
+    # tunnel_method: "SSH_KEY_AUTH" # REQUIRED | string | Connect through a jump server tunnel host using username and ssh key
+    ## -------- Another valid structure for tunnel_method: --------
+    # tunnel_host: # REQUIRED | string | Hostname of the jump server host that allows inbound ssh tunnel.
+    # tunnel_port: 22 # REQUIRED | integer | Port on the proxy/jump server that accepts inbound ssh connections. | Example: 22
+    # tunnel_user: # REQUIRED | string | OS-level username for logging into the jump server host
+    # tunnel_method: "SSH_PASSWORD_AUTH" # REQUIRED | string | Connect through a jump server tunnel host using username and password authentication
+    # tunnel_user_password: ${TUNNEL_USER_PASSWORD} # SECRET (please store in environment variables) | REQUIRED | string | OS-level password for logging into the jump server host
+  jdbc_url_params: "" # OPTIONAL | string | Additional properties to pass to the JDBC URL string when connecting to the database formatted as 'key=value' pairs separated by the symbol '&'. (example: key1=value1&key2=value2&key3=value3). For more information read about <a href="https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-jdbc-url-format.html">JDBC URL parameters</a>.
+  replication_method:
+    ## -------- Pick one valid structure among the examples below: --------
+    method: "STANDARD" # REQUIRED | string
+    ## -------- Another valid structure for replication_method: --------
+    # method: "CDC" # REQUIRED | string
+    # server_time_zone: # OPTIONAL | string | Enter the configured MySQL server timezone. This should only be done if the configured timezone in your MySQL instance does not conform to IANNA standard.
+    # initial_waiting_seconds: 300 # OPTIONAL | integer | The amount of time the connector will wait when it launches to determine if there is new data to sync or not. Defaults to 300 seconds. Valid range: 120 seconds to 1200 seconds. Read about <a href="https://docs.airbyte.com/integrations/sources/mysql/#change-data-capture-cdc">initial waiting time</a>.
