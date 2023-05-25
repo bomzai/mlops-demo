@@ -1,0 +1,46 @@
+services:
+  coder:
+    restart: always
+    image: ${CODER_IMAGE}
+    container_name: coder
+    ports:
+      - ${CODER_PORT}:${CODER_PORT}
+    expose:
+        - "${CODER_PORT}"
+    networks:
+      - network1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+    environment:
+      CODER_PG_CONNECTION_URL: "postgresql://${CODER_POSTGRES_USER}:${CODER_POSTGRES_PASSWORD}@${CODER_POSTGRES_HOST}:${CODER_POSTGRES_PORT}/${CODER_POSTGRES_DB}?sslmode=disable"
+      CODER_HTTP_ADDRESS: "0.0.0.0:${CODER_PORT}"
+      CODER_ACCESS_URL: "http://localhost:${CODER_PORT}"
+    group_add:
+      - ${DOCKER_GROUP_ID}
+  init-container:
+    image: mlops-demo/init-container:1.0
+    container_name: coder-init
+    command: "/scripts/init.sh"
+    networks:
+      - network1
+    environment:
+      PGHOST: "${CODER_POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      CODER_DB: "${CODER_POSTGRES_DB}"
+      CODER_USER: "${CODER_POSTGRES_USER}"
+      CODER_PASSWORD: "${CODER_POSTGRES_PASSWORD}"
+      CODER_ACCESS_URL: "http://coder:7080"
+      CODER_FIRST_USER_USERNAME: "${CODER_ADMIN_USERNAME}"
+      CODER_FIRST_USER_EMAIL: "${CODER_ADMIN_EMAIL}"
+      CODER_FIRST_USER_PASSWORD: "${CODER_ADMIN_PASSWORD}"
+      CODER_FIRST_USER_TRIAL: "false"
+    volumes:
+      - "./scripts:/scripts:rwx"
+      - "./coder-template:/coder-template:rw"
+
+networks:
+  network1:
+    name: "${NETWORK_NAME}"
+    external: true

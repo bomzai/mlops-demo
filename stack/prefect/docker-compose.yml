@@ -1,0 +1,40 @@
+services:
+  prefect:
+    restart: always
+    image: "${PREFECT_IMAGE}"
+    container_name: prefect
+    command: "prefect orion start"
+    ports:
+      - "${PREFECT_PORT}:${PREFECT_PORT}"
+    expose:
+        - "${PREFECT_PORT}"
+    networks:
+      - network1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+    environment:
+      PREFECT_API_URL: "http://localhost:${PREFECT_PORT}/api"
+      PREFECT_ORION_API_PORT: "${PREFECT_PORT}"
+      PREFECT_ORION_DATABASE_CONNECTION_URL: "postgresql+asyncpg://${PREFECT_POSTGRES_USER}:${PREFECT_POSTGRES_PASSWORD}@${PREFECT_POSTGRES_HOST}:${PREFECT_POSTGRES_PORT}/${PREFECT_POSTGRES_DB}"
+      PREFECT_ORION_API_HOST: "0.0.0.0"
+  init-container:
+    image: mlops-demo/init-container:1.0
+    container_name: prefect-init
+    command: "/scripts/init.sh"
+    networks:
+      - network1
+    environment:
+      PGHOST: "${PREFECT_POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      PREFECT_DB: "${PREFECT_POSTGRES_DB}"
+      PREFECT_USER: "${PREFECT_POSTGRES_USER}"
+      PREFECT_PASSWORD: "${PREFECT_POSTGRES_PASSWORD}"
+    volumes:
+      - "./scripts:/scripts:rwx"
+
+networks:
+  network1:
+    name: "${NETWORK_NAME}"
+    external: true
