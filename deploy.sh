@@ -10,10 +10,12 @@ fi
 
 CONFIG_FILE=$1; shift
 
+# Set host env variables
+export DOCKER_GROUP_ID=$(getent group docker | cut -d: -f3)
+
 # Deploy the pre-requisites
 echo "Deploying prerequisites."
 docker-compose -f stack/prerequisite/docker-compose.yml --env-file $CONFIG_FILE up --build --detach
-
 # Deploy each component
 for COMPONENT in "$@"
 do

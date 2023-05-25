@@ -16,7 +16,7 @@ services:
       CODER_HTTP_ADDRESS: "0.0.0.0:${CODER_PORT}"
       CODER_ACCESS_URL: "http://localhost:${CODER_PORT}"
     group_add:
-      - "1002"
+      - ${DOCKER_GROUP_ID}
   init-container:
     image: mlops-demo/init-container:1.0
     container_name: coder-init
