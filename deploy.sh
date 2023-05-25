@@ -11,7 +11,21 @@ fi
 CONFIG_FILE=$1; shift
 
 # Set host env variables
-export DOCKER_GROUP_ID=$(getent group docker | cut -d: -f3)
+case $(uname) in
+
+  Linux)
+    export DOCKER_GROUP_ID=$(getent group docker | cut -d: -f3)
+    ;;
+
+  Darwin)
+    export DOCKER_GROUP_ID=20
+    ;;
+
+  *)
+    echo "Error: Unsupported OS"
+    exit 1
+    ;;
+esac
 
 # Deploy the pre-requisites
 echo "Deploying prerequisites."
