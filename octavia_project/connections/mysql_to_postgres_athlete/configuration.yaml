@@ -35,7 +35,7 @@ configuration:
     - name: "DBT Athlete transformation" # REQUIRED | string
       operator_configuration:
         dbt:
-          dbt_arguments: "run --profiles-dir ./.dbt" # REQUIRED | string | Entrypoint arguments for dbt cli to run the project
+          dbt_arguments: "run --project-dir ./dbt_testing --profiles-dir ./dbt_testing/.dbt --select athlete" # REQUIRED | string | Entrypoint arguments for dbt cli to run the project
           docker_image: "fishtownanalytics/dbt:0.19.1" # REQUIRED | string | Docker image URL with dbt installed
           git_repo_branch: "1-create-demo-for-dbt" # OPTIONAL | string | Git branch name
           git_repo_url: "https://Ouuumar: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@github.com/bomzai/mlops-demo.git" # REQUIRED | string | Git repository URL of the custom transformation project
