@@ -18,7 +18,14 @@ case $(uname) in
     ;;
 
   Darwin)
-    export DOCKER_GROUP_ID=20
+    # Docker workaround on Macos 
+    export DOCKER_GROUP_ID=1002
+    docker run --rm \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    --user root \
+    --entrypoint /bin/sh \
+    ghcr.io/coder/coder:v0.23.4 \
+    -c "chmod g+w /var/run/docker.sock && chgrp $DOCKER_GROUP_ID /var/run/docker.sock"
     ;;
 
   *)

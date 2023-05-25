@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 
 
 @task
-def download_file(base_url, filename, destination_folder):
+def download_file(base_url: str, filename: str, destination_folder: str):
     url = "/".join([base_url, filename])
     destination = "/".join([destination_folder, filename])
     r = requests.get(url, allow_redirects=True)

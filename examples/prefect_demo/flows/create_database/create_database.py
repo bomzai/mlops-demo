@@ -4,7 +4,7 @@ from prefect.blocks.system import Secret
 from sqlalchemy import create_engine, text
 
 @flow()
-def create_database(dbname: str, postgres_secret:str):
+def create_database(dbname: str, postgres_secret: str):
     get_run_logger().info("Get credentials")
     postgres_connection_string = Secret.load(postgres_secret).get()
 
