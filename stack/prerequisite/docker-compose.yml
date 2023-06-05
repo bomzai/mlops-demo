@@ -1,3 +1,5 @@
+version: "2.2"
+
 networks:
   network:
     name: ${NETWORK_NAME}
