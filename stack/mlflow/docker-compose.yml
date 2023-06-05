@@ -28,7 +28,7 @@ services:
       MLFLOW_USER: "${MLFLOW_POSTGRES_USER}"
       MLFLOW_PASSWORD: "${MLFLOW_POSTGRES_PASSWORD}"
     volumes:
-      - "./scripts:/scripts:rwx"
+      - "./scripts:/scripts"
 
 networks:
   network1:

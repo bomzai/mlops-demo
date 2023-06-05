@@ -32,7 +32,7 @@ services:
       PREFECT_USER: "${PREFECT_POSTGRES_USER}"
       PREFECT_PASSWORD: "${PREFECT_POSTGRES_PASSWORD}"
     volumes:
-      - "./scripts:/scripts:rwx"
+      - "./scripts:/scripts"
 
 networks:
   network1:
