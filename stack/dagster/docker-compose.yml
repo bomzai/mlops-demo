@@ -1,0 +1,106 @@
+services:
+  init-container:
+    image: mlops-demo/init-container:1.0
+    container_name: init-container
+    command: "sh /scripts/init.sh"
+    networks:
+      - network1
+    environment:
+      PGHOST: "${DAGSTER_POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      DAGSTER_DB: "${DAGSTER_POSTGRES_DB}"
+      DAGSTER_USER: "${DAGSTER_POSTGRES_USER}"
+      DAGSTER_PASSWORD: "${DAGSTER_POSTGRES_PASSWORD}"
+    volumes:
+      - "./scripts:/scripts:rwx"
+
+  # This service runs the gRPC server that loads your user code, in both dagit
+  # and dagster-daemon. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
+  # run launcher to use this same image when launching runs in a new container as well.
+  # Multiple containers like this can be deployed separately - each just needs to run on
+  # its own port, and have its own entry in the workspace.yaml file that's loaded by dagit.
+  docker_example_user_code:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_user_code
+    container_name: docker_example_user_code
+    image: docker_example_user_code_image
+    restart: always
+    networks:
+      - network1
+    environment:
+      DAGSTER_POSTGRES_USER: "${DAGSTER_POSTGRES_USER}"
+      DAGSTER_POSTGRES_PASSWORD: "${DAGSTER_POSTGRES_PASSWORD}"
+      DAGSTER_POSTGRES_DB: "${DAGSTER_POSTGRES_DB}"
+      DAGSTER_POSTGRES_HOST: "${DAGSTER_POSTGRES_HOST}"
+      DAGSTER_CURRENT_IMAGE: "docker_example_user_code_image"
+    depends_on:
+      - init-container
+
+  # This service runs dagit, which loads your user code from the user code container.
+  # Since our instance uses the QueuedRunCoordinator, any runs submitted from dagit will be put on
+  # a queue and later dequeued and launched by dagster-daemon.
+  docker_example_dagit:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_dagster
+    entrypoint:
+      - dagit
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    container_name: docker_example_dagit
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_POSTGRES_USER: "${DAGSTER_POSTGRES_USER}"
+      DAGSTER_POSTGRES_PASSWORD: "${DAGSTER_POSTGRES_PASSWORD}"
+      DAGSTER_POSTGRES_DB: "${DAGSTER_POSTGRES_DB}"
+      DAGSTER_POSTGRES_HOST: "${DAGSTER_POSTGRES_HOST}"
+      NETWORK_NAME: "${NETWORK_NAME}"
+    volumes: # Make docker client accessible so we can terminate containers from dagit
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    networks:
+      - network1
+    depends_on:
+      - init-container
+      - docker_example_user_code
+
+  # This service runs the dagster-daemon process, which is responsible for taking runs
+  # off of the queue and launching them, as well as creating runs from schedules or sensors.
+  docker_example_daemon:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_dagster
+    entrypoint:
+      - dagster-daemon
+      - run
+    container_name: docker_example_daemon
+    restart: on-failure
+    environment:
+      DAGSTER_POSTGRES_USER: "${DAGSTER_POSTGRES_USER}"
+      DAGSTER_POSTGRES_PASSWORD: "${DAGSTER_POSTGRES_PASSWORD}"
+      DAGSTER_POSTGRES_DB: "${DAGSTER_POSTGRES_DB}"
+      DAGSTER_POSTGRES_HOST: "${DAGSTER_POSTGRES_HOST}"
+      NETWORK_NAME: "${NETWORK_NAME}"
+    volumes: # Make docker client accessible so we can launch containers using host docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    networks:
+      - network1
+    depends_on:
+      - init-container
+      - docker_example_user_code
+
+networks:
+  network1:
+    name: "${NETWORK_NAME}"
+    external: true
