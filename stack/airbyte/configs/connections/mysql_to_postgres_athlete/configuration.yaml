@@ -1,0 +1,93 @@
+# Configuration for connection mysql_to_postgres_athlete
+definition_type: connection
+resource_name: "mysql_to_postgres_athlete"
+source_configuration_path: sources/mysql_athlete/configuration.yaml
+destination_configuration_path: destinations/postgres_athlete/configuration.yaml
+
+# EDIT THE CONFIGURATION BELOW!
+configuration:
+  status: active # REQUIRED | string | Allowed values: active, inactive, deprecated
+  skip_reset: false # OPTIONAL | boolean | Flag to check if the connection should be reset after a connection update
+  namespace_definition: source # OPTIONAL | string | Allowed values: source, destination, customformat
+  namespace_format: "${SOURCE_NAMESPACE}" # OPTIONAL | string | Used when namespaceDefinition is 'customformat'. If blank then behaves like namespaceDefinition = 'destination'. If "${SOURCE_NAMESPACE}" then behaves like namespaceDefinition = 'source'.
+  prefix: "" # REQUIRED | Prefix that will be prepended to the name of each stream when it is written to the destination
+  resource_requirements: # OPTIONAL | object | Resource requirements to run workers (blank for unbounded allocations)
+    cpu_limit: "" # OPTIONAL
+    cpu_request: "" # OPTIONAL
+    memory_limit: "" # OPTIONAL
+    memory_request: "" # OPTIONAL
+  schedule_type: manual # OPTIONAL | string | Allowed values: basic, cron, manual
+  #schedule_data: # OPTIONAL | object
+  basic_schedule:
+    time_unit: hours # REQUIRED | string | Allowed values: minutes, hours, days, weeks, months
+    units: 1 # REQUIRED | integer
+    # cron:
+    #   cron_time_zone: "UTC" # REQUIRED | string
+    #   cron_expression: "* */2 * * * ?" # REQUIRED | string
+  operations:
+  # -------- Uncomment and edit the block below if you want to enable Airbyte normalization --------
+    - name: "Normalization"
+      operator_configuration:
+        normalization:
+          option: "basic"
+        operator_type: "normalization"
+  # -------- Uncomment and edit the block below if you want to declare a custom transformation --------
+    # - name: "DBT Athlete transformation" # REQUIRED | string
+    #   operator_configuration:
+    #     dbt:
+    #       dbt_arguments: "run --project-dir ./dbt_testing --profiles-dir ./dbt_testing/.dbt --select athlete" # REQUIRED | string | Entrypoint arguments for dbt cli to run the project
+    #       docker_image: "fishtownanalytics/dbt:0.19.1" # REQUIRED | string | Docker image URL with dbt installed
+    #       git_repo_branch: "1-create-demo-for-dbt" # OPTIONAL | string | Git branch name
+    #       git_repo_url: "https://Ouuumar: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@github.com/bomzai/mlops-demo.git" # REQUIRED | string | Git repository URL of the custom transformation project
+    #     operator_type: dbt # REQUIRED | string | Allowed values: dbt, normalization
+  sync_catalog: # OPTIONAL | object | 🚨 ONLY edit streams.config, streams.stream should not be edited as schema cannot be changed.
+    streams:
+      - config:
+          alias_name: customers
+          cursor_field: []
+          destination_sync_mode: append
+          primary_key:
+            - - customerNumber
+          selected: true
+          suggested: true
+          sync_mode: full_refresh
+        stream:
+          default_cursor_field: []
+          json_schema:
+            properties:
+              addressLine1:
+                type: string
+              addressLine2:
+                type: string
+              city:
+                type: string
+              contactFirstName:
+                type: string
+              contactLastName:
+                type: string
+              country:
+                type: string
+              creditLimit:
+                type: number
+              customerName:
+                type: string
+              customerNumber:
+                airbyte_type: integer
+                type: number
+              phone:
+                type: string
+              postalCode:
+                type: string
+              salesRepEmployeeNumber:
+                airbyte_type: integer
+                type: number
+              state:
+                type: string
+            type: object
+          name: customers
+          namespace: athlete
+          source_defined_primary_key:
+            - - customerNumber
+          supported_sync_modes:
+            - full_refresh
+            - incremental

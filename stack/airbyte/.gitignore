@@ -1,0 +1,4 @@
+connections/*/state*
+sources/*/state*
+destinations/*/state*
+configs/api_http*
