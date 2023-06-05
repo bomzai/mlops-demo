@@ -10,6 +10,8 @@ services:
     hostname: postgres
     expose:
       - "${POSTGRES_PORT}"
+    ports:
+      - "${LOCAL_PORT}:${POSTGRES_PORT}"
     networks:
       - network
     environment:
