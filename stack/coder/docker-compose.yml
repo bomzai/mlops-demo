@@ -37,8 +37,8 @@ services:
       CODER_FIRST_USER_PASSWORD: "${CODER_ADMIN_PASSWORD}"
       CODER_FIRST_USER_TRIAL: "false"
     volumes:
-      - "./scripts:/scripts:rwx"
-      - "./coder-template:/coder-template:rw"
+      - "./scripts:/scripts"
+      - "./coder-template:/coder-template"
 
 networks:
   network1:

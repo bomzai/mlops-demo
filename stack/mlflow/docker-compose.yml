@@ -2,7 +2,7 @@ services:
   mlflow_server:
     restart: always
     image: "${MLFLOW_IMAGE}"
-    build: stack/mlflow
+    build: .
     container_name: mlflow_server
     ports:
       - "${MLFLOW_PORT}:${MLFLOW_PORT}"
@@ -28,7 +28,7 @@ services:
       MLFLOW_USER: "${MLFLOW_POSTGRES_USER}"
       MLFLOW_PASSWORD: "${MLFLOW_POSTGRES_PASSWORD}"
     volumes:
-      - "./scripts:/scripts:rwx"
+      - "./scripts:/scripts"
 
 networks:
   network1:
