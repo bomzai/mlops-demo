@@ -19,6 +19,8 @@ Launch the script :
 
     bash install.sh 
 
+Environment variables from stack/airbyte/configs/*/* should be placed in your ~/.octavia file
+
 Run : 
 
     source /home/yourhomename/.bashrc
