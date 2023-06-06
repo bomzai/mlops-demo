@@ -12,8 +12,8 @@ configuration:
   host: "localhost" # REQUIRED | string | Hostname of the database.
   port: 5444 # REQUIRED | integer | Port of the database. | Example: 5432
   schema: "airbyte" # REQUIRED | string | The default schema tables are written to if the source does not specify a namespace. The usual value for this field is "public". | Example: public
-  database: "airbyte" # REQUIRED | string | Name of the database.
-  password: "airbyte123" # SECRET (please store in environment variables) | OPTIONAL | string | Password associated with the username.
+  database: ${AIRBYTE_POSTGRES_DB} # REQUIRED | string | Name of the database.
+  password: ${AIRBYTE_POSTGRES_PASSWORD} # SECRET (please store in environment variables) | OPTIONAL | string | Password associated with the username.
   ssl_mode:
     ## -------- Pick one valid structure among the examples below: --------
     mode: "disable" # REQUIRED | string
@@ -33,7 +33,7 @@ configuration:
     # ca_certificate: ${CA_CERTIFICATE} # SECRET (please store in environment variables) | REQUIRED | string | CA certificate
     # client_certificate: ${CLIENT_CERTIFICATE} # SECRET (please store in environment variables) | REQUIRED | string | Client certificate
     # client_key_password: ${CLIENT_KEY_PASSWORD} # SECRET (please store in environment variables) | OPTIONAL | string | Password for keystorage. This field is optional. If you do not add it - the password will be generated automatically.
-  username: "airbyte" # REQUIRED | string | Username to use to access the database.
+  username: ${AIRBYTE_POSTGRES_USER} # REQUIRED | string | Username to use to access the database.
   tunnel_method:
     ## -------- Pick one valid structure among the examples below: --------
     tunnel_method: "NO_TUNNEL" # REQUIRED | string | No ssh tunnel needed to connect to database

@@ -11,8 +11,8 @@ configuration:
   ssl: true # OPTIONAL | boolean | Encrypt data using SSL.
   host: "localhost" # REQUIRED | string | The host name of the database.
   port: 3306 # REQUIRED | integer | The port to connect to. | Example: 3306
-  database: athlete # REQUIRED | string | The database name.
-  password: "root" # SECRET (please store in environment variables) | OPTIONAL | string | The password associated with the username.
+  database: ${MYSQL_DATABASE} # REQUIRED | string | The database name.
+  password: ${MYSQL_ROOT_PASSWORD} # SECRET (please store in environment variables) | OPTIONAL | string | The password associated with the username.
   ssl_mode:
     ## -------- Pick one valid structure among the examples below: --------
     mode: "preferred" # REQUIRED | string
@@ -30,7 +30,7 @@ configuration:
     # ca_certificate: ${CA_CERTIFICATE} # SECRET (please store in environment variables) | REQUIRED | string | CA certificate
     # client_certificate: ${CLIENT_CERTIFICATE} # SECRET (please store in environment variables) | OPTIONAL | string | Client certificate (this is not a required field, but if you want to use it, you will need to add the <b>Client key</b> as well)
     # client_key_password: ${CLIENT_KEY_PASSWORD} # SECRET (please store in environment variables) | OPTIONAL | string | Password for keystorage. This field is optional. If you do not add it - the password will be generated automatically.
-  username: "root" # REQUIRED | string | The username which is used to access the database.
+  username: ${MYSQL_USER} # REQUIRED | string | The username which is used to access the database.
   tunnel_method:
     ## -------- Pick one valid structure among the examples below: --------
     tunnel_method: "NO_TUNNEL" # REQUIRED | string | No ssh tunnel needed to connect to database
