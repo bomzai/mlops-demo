@@ -1,4 +1,4 @@
-version: "2.2"
+version: "3.3"
 
 services:
   prefect:
@@ -15,10 +15,22 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:rw"
     environment:
-      PREFECT_API_URL: "http://localhost:${PREFECT_PORT}/api"
+      PREFECT_API_URL: "http://${PREFECT_HOST}:${PREFECT_PORT}/api"
       PREFECT_ORION_API_PORT: "${PREFECT_PORT}"
       PREFECT_ORION_DATABASE_CONNECTION_URL: "postgresql+asyncpg://${PREFECT_POSTGRES_USER}:${PREFECT_POSTGRES_PASSWORD}@${PREFECT_POSTGRES_HOST}:${PREFECT_POSTGRES_PORT}/${PREFECT_POSTGRES_DB}"
       PREFECT_ORION_API_HOST: "0.0.0.0"
+  prefect-agent:
+    restart: always
+    image: "${PREFECT_IMAGE}"
+    container_name: prefect-agent
+    command: "prefect agent start -q default"
+    networks:
+      - network1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+    environment:
+      PREFECT_API_URL: "http://prefect:${PREFECT_PORT}/api"
+      PREFECT_ORION_API_PORT: "${PREFECT_PORT}"
   init-container:
     image: mlops-demo/init-container:1.0
     container_name: prefect-init
