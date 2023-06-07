@@ -1,4 +1,0 @@
-configs/connections/*/state*
-configs/sources/*/state*
-configs/destinations/*/state*
-configs/api_http*
