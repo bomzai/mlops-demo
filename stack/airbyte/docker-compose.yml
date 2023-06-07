@@ -1,0 +1,258 @@
+version: "3.8"
+#https://github.com/compose-spec/compose-spec/blob/master/spec.md#using-extensions-as-fragments
+x-logging: &default-logging
+  options:
+    max-size: "100m"
+    max-file: "5"
+  driver: json-file
+services:
+  # hook in case we need to add init behavior
+  # every root service (no depends_on) should depend on init
+  init-postgres:
+    image: mlops-demo/init-container:1.0
+    container_name: airbyte-db-init
+    command: "/scripts/init.sh"
+    networks:
+      - network1
+    environment:
+      PGHOST: "${AIRBYTE_POSTGRES_HOST}"
+      PGPORT: "${POSTGRES_PORT}"
+      PGUSER: "${POSTGRES_USER}"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      AIRBYTE_DB: "${AIRBYTE_POSTGRES_DB}"
+      AIRBYTE_USER: "${AIRBYTE_POSTGRES_USER}"
+      AIRBYTE_PASSWORD: "${AIRBYTE_POSTGRES_PASSWORD}"
+    volumes:
+      - "./scripts:/scripts"
+  init:
+    image: airbyte/init:${VERSION}
+    logging: *default-logging
+    container_name: init
+    command: /bin/sh -c "./scripts/create_mount_directories.sh /local_parent ${HACK_LOCAL_ROOT_PARENT} ${LOCAL_ROOT}"
+    environment:
+      - LOCAL_ROOT=${LOCAL_ROOT}
+      - HACK_LOCAL_ROOT_PARENT=${HACK_LOCAL_ROOT_PARENT}
+    volumes:
+      - ${HACK_LOCAL_ROOT_PARENT}:/local_parent
+    depends_on:
+      - init-postgres
+  bootloader:
+    image: airbyte/bootloader:${VERSION}
+    logging: *default-logging
+    container_name: airbyte-bootloader
+    environment:
+      - AIRBYTE_VERSION=${VERSION}
+      - DATABASE_PASSWORD=${AIRBYTE_POSTGRES_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USER=${AIRBYTE_POSTGRES_USER}
+      - LOG_LEVEL=${LOG_LEVEL}
+    networks:
+      - airbyte_internal
+      - network1
+    depends_on:
+      init:
+        condition: service_completed_successfully
+  worker:
+    image: airbyte/worker:${VERSION}
+    logging: *default-logging
+    container_name: airbyte-worker
+    restart: unless-stopped
+    environment:
+      - AIRBYTE_VERSION=${VERSION}
+      - AUTO_DISABLE_FAILING_CONNECTIONS=${AUTO_DISABLE_FAILING_CONNECTIONS}
+      - CONFIGS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION=${CONFIGS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION:-}
+      - CONFIG_ROOT=${CONFIG_ROOT}
+      - DATABASE_PASSWORD=${AIRBYTE_POSTGRES_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USER=${AIRBYTE_POSTGRES_USER}
+      - FEATURE_FLAG_CLIENT=${FEATURE_FLAG_CLIENT}
+      - INTERNAL_API_HOST=${INTERNAL_API_HOST}
+      - JOBS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION=${JOBS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION:-}
+      - LOCAL_DOCKER_MOUNT=${LOCAL_DOCKER_MOUNT}
+      - LOCAL_ROOT=${LOCAL_ROOT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - MAX_CHECK_WORKERS=${MAX_CHECK_WORKERS}
+      - MAX_DISCOVER_WORKERS=${MAX_DISCOVER_WORKERS}
+      - MAX_SPEC_WORKERS=${MAX_SPEC_WORKERS}
+      - MAX_SYNC_WORKERS=${MAX_SYNC_WORKERS}
+      - MAX_NOTIFY_WORKERS=${MAX_NOTIFY_WORKERS}
+      - SHOULD_RUN_NOTIFY_WORKFLOWS=${SHOULD_RUN_NOTIFY_WORKFLOWS}
+      - SYNC_JOB_MAX_ATTEMPTS=${SYNC_JOB_MAX_ATTEMPTS}
+      - SYNC_JOB_MAX_TIMEOUT_DAYS=${SYNC_JOB_MAX_TIMEOUT_DAYS}
+      - TEMPORAL_HOST=${TEMPORAL_HOST}
+      - TRACKING_STRATEGY=${TRACKING_STRATEGY}
+      - WEBAPP_URL=${WEBAPP_URL}
+      - WORKSPACE_DOCKER_MOUNT=${WORKSPACE_DOCKER_MOUNT}
+      - WORKSPACE_ROOT=${WORKSPACE_ROOT}
+      - OTEL_COLLECTOR_ENDPOINT=${OTEL_COLLECTOR_ENDPOINT}
+      - JOB_ERROR_REPORTING_STRATEGY=${JOB_ERROR_REPORTING_STRATEGY}
+      - AUTO_DETECT_SCHEMA=${AUTO_DETECT_SCHEMA}
+      - USE_STREAM_CAPABLE_STATE=${USE_STREAM_CAPABLE_STATE}
+      - MICRONAUT_ENVIRONMENTS=${WORKERS_MICRONAUT_ENVIRONMENTS}
+    configs:
+      - flags
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - workspace:${WORKSPACE_ROOT}
+      - ${LOCAL_ROOT}:${LOCAL_ROOT}
+    ports:
+      - "9000"
+    networks:
+      - airbyte_internal
+      - network1
+    depends_on:
+      bootloader:
+        condition: service_completed_successfully
+  server:
+    image: airbyte/server:${VERSION}
+    logging: *default-logging
+    container_name: airbyte-server
+    restart: unless-stopped
+    environment:
+      - AIRBYTE_ROLE=${AIRBYTE_ROLE:-}
+      - AIRBYTE_VERSION=${VERSION}
+      - CONFIGS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION=${CONFIGS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION:-}
+      - CONFIG_ROOT=${CONFIG_ROOT}
+      - DATABASE_PASSWORD=${AIRBYTE_POSTGRES_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USER=${AIRBYTE_POSTGRES_USER}
+      - FEATURE_FLAG_CLIENT=${FEATURE_FLAG_CLIENT}
+      - JOBS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION=${JOBS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION:-}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - TEMPORAL_HOST=${TEMPORAL_HOST}
+      - TRACKING_STRATEGY=${TRACKING_STRATEGY}
+      - JOB_ERROR_REPORTING_STRATEGY=${JOB_ERROR_REPORTING_STRATEGY}
+      - WEBAPP_URL=${WEBAPP_URL}
+      - WORKSPACE_ROOT=${WORKSPACE_ROOT}
+      - MICRONAUT_ENVIRONMENTS=${WORKERS_MICRONAUT_ENVIRONMENTS}
+      - AUTO_DETECT_SCHEMA=${AUTO_DETECT_SCHEMA}
+      - MAX_NOTIFY_WORKERS=5
+      - SHOULD_RUN_NOTIFY_WORKFLOWS=${SHOULD_RUN_NOTIFY_WORKFLOWS}
+    ports:
+      - "8001"
+    configs:
+      - flags
+    volumes:
+      - workspace:${WORKSPACE_ROOT}
+      - data:${CONFIG_ROOT}
+      - ${LOCAL_ROOT}:${LOCAL_ROOT}
+    networks:
+      - airbyte_internal
+      - network1
+    depends_on:
+      bootloader:
+        condition: service_completed_successfully
+  webapp:
+    image: airbyte/webapp:${VERSION}
+    logging: *default-logging
+    container_name: airbyte-webapp
+    restart: unless-stopped
+    ports:
+      - "80"
+    environment:
+      - INTERNAL_API_HOST=${INTERNAL_API_HOST}
+      - CONNECTOR_BUILDER_API_HOST=${CONNECTOR_BUILDER_API_HOST}
+      - TRACKING_STRATEGY=${TRACKING_STRATEGY}
+    networks:
+      - airbyte_internal
+      - network1
+    depends_on:
+      bootloader:
+        condition: service_completed_successfully
+  airbyte-temporal:
+    image: airbyte/temporal:${VERSION}
+    logging: *default-logging
+    container_name: airbyte-temporal
+    restart: unless-stopped
+    environment:
+      - BIND_ON_IP=0.0.0.0
+      - TEMPORAL_BROADCAST_ADDRESS=127.0.0.1
+      - DB=postgresql
+      - DB_PORT=${DATABASE_PORT}
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development.yaml
+      - LOG_LEVEL=${LOG_LEVEL}
+      - POSTGRES_PWD=${AIRBYTE_POSTGRES_PASSWORD}
+      - POSTGRES_SEEDS=${AIRBYTE_POSTGRES_HOST}
+      - POSTGRES_USER=${AIRBYTE_POSTGRES_USER}
+    volumes:
+      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    networks:
+      - airbyte_internal
+      - network1
+  airbyte-cron:
+    image: airbyte/cron:${VERSION}
+    logging: *default-logging
+    container_name: airbyte-cron
+    restart: unless-stopped
+    environment:
+      - AIRBYTE_VERSION=${VERSION}
+      - CONFIGS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION=${CONFIGS_DATABASE_MINIMUM_FLYWAY_MIGRATION_VERSION}
+      - DATABASE_PASSWORD=${AIRBYTE_POSTGRES_PASSWORD}
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_USER=${AIRBYTE_POSTGRES_USER}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - WORKSPACE_ROOT=${WORKSPACE_ROOT}
+      - MICRONAUT_ENVIRONMENTS=${CRON_MICRONAUT_ENVIRONMENTS}
+    configs:
+      - flags
+    volumes:
+      - workspace:${WORKSPACE_ROOT}
+    networks:
+      - airbyte_internal
+      - network1
+    depends_on:
+      bootloader:
+        condition: service_completed_successfully
+  airbyte-connector-builder-server:
+    image: airbyte/connector-atelier-server:${VERSION}
+    logging: *default-logging
+    container_name: airbyte-connector-builder-server
+    restart: unless-stopped
+    ports:
+      - 80
+    environment:
+      - AIRBYTE_VERSION=${VERSION}
+    networks:
+      - airbyte_internal
+      - network1
+    depends_on:
+      bootloader:
+        condition: service_completed_successfully
+  airbyte-proxy:
+    image: airbyte/proxy:${VERSION}
+    container_name: airbyte-proxy
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8003:8003"
+    environment:
+      - BASIC_AUTH_USERNAME=${BASIC_AUTH_USERNAME}
+      - BASIC_AUTH_PASSWORD=${BASIC_AUTH_PASSWORD}
+      - BASIC_AUTH_PROXY_TIMEOUT=${BASIC_AUTH_PROXY_TIMEOUT}
+    networks:
+      - airbyte_internal
+      - airbyte_public
+      - network1
+    depends_on:
+      - webapp
+      - server
+volumes:
+  workspace:
+    name: ${WORKSPACE_DOCKER_MOUNT}
+  # the data volume is only needed for backward compatibility; when users upgrade
+  # from an old Airbyte version that relies on file-based configs, the server needs
+  # to read this volume to copy their configs to the database
+  data:
+    name: ${DATA_DOCKER_MOUNT}
+  db:
+    name: ${DB_DOCKER_MOUNT}
+configs:
+  flags:
+    file: ./flags.yml
+networks:
+  airbyte_public:
+  airbyte_internal:
+  network1:
+    name: "${NETWORK_NAME}"
+    external: true
