@@ -27,13 +27,13 @@ Environment variables in configuration.yaml files (stack/airbyte/configs/*) shou
 
 Deploy MySQL, run :
 
-    docker-compose -f examples/data/docker-compose.yaml --env-file ./configs/local_docker.env up --build --detach
+    docker-compose -f examples/airbyte_demo/mysql/docker-compose.yaml --env-file ./configs/local_docker.env up --build --detach
 
 # Apply the configuration to Airbyte
 
 After deploying airbyte, run :
 
-    cd stack/airbyte/configs
+    cd examples/airbyte_demo/configs
     octavia apply --force
 
 # Sync data
