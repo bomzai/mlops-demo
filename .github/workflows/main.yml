@@ -3,7 +3,9 @@ on:
         branches:
             - dev
             - main
-
+    pull_request:
+        types:
+            - opened
 jobs:
     check_mlflow:
             name: check MlFlow
