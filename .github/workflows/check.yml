@@ -1,0 +1,14 @@
+on:
+    pull_request:
+        types:
+            - opened
+        branches:
+            - dev
+            - main
+jobs:
+    check_mlflow:
+            name: check MlFlow
+            runs-on: ubuntu-18.04
+            steps:
+                - name: deploy
+                  run: ./deploy.sh configs/local_docker.env mlflow
