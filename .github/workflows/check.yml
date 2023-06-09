@@ -10,5 +10,9 @@ jobs:
             name: check MlFlow
             runs-on: ubuntu-18.04
             steps:
+                - name: greetings
+                  shell: bash
+                  run:  echo "Hello world !"
                 - name: deploy
+                  shell: bash
                   run: ./deploy.sh configs/local_docker.env mlflow
